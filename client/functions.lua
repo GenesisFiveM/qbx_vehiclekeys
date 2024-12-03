@@ -132,18 +132,21 @@ end
 ---@param vehicle number The entity number of the vehicle.
 ---@param isAdvancedLockedpick boolean Determines whether an advanced lockpick was used.
 ---@param isSuccess boolean? Determines whether the lock has been successfully opened.
-local function lockpickCallback(vehicle, isAdvancedLockedpick, isSuccess)
+local function lockpickCallback(vehicle, isAdvancedLockedpick, isSuccess, slot, iskey)
     if isSuccess then
-        lockpickSuccessCallback(vehicle)
+        if iskey then
+            lib.callback.await('qbx_vehiclekeys:server:giveKeys', false, VehToNet(vehicle))
+        else
+            lockpickSuccessCallback(vehicle)
+        end
     else -- if player fails quickevent
-        SendPoliceAlertAttempt('carjack', vehicle)
+        -- SendPoliceAlertAttempt('carjack', vehicle)
         SetVehicleAlarm(vehicle, false)
         SetVehicleAlarmTimeLeft(vehicle, config.vehicleAlarmDuration)
         TriggerServerEvent('hud:server:GainStress', math.random(1, 4))
         exports.qbx_core:Notify(locale('notify.failed_lockedpick'), 'error')
+        breakLockpick(isAdvancedLockedpick, slot)
     end
-
-    breakLockpick(isAdvancedLockedpick, vehicle)
 end
 
 local islockpickingProcessLocked = false -- lock flag
@@ -151,7 +154,7 @@ local islockpickingProcessLocked = false -- lock flag
 ---@param isAdvancedLockedpick boolean Determines whether an advanced lockpick was used
 ---@param maxDistance number? The max distance to check.
 ---@param customChallenge boolean? lockpick challenge
-function LockpickDoor(isAdvancedLockedpick, maxDistance, customChallenge)
+function LockpickDoor(isAdvancedLockedpick, data, maxDistance, customChallenge)
     maxDistance = maxDistance or 2
     local pedCoords = GetEntityCoords(cache.ped)
     local vehicle = lib.getClosestVehicle(pedCoords, maxDistance * 2, false) -- The difference between the door and the center of the vehicle
@@ -168,29 +171,60 @@ function LockpickDoor(isAdvancedLockedpick, maxDistance, customChallenge)
         or GetVehicleConfig(vehicle).lockpickImmune
     then return end
 
-    local skillCheckConfig = config.skillCheck[isAdvancedLockedpick and 'advancedLockpick' or 'lockpick']
+    -- local skillCheckConfig = config.skillCheck[isAdvancedLockedpick and 'advancedLockpick' or 'lockpick']
 
-    skillCheckConfig = skillCheckConfig.model[GetEntityModel(vehicle)]
-        or skillCheckConfig.class[GetVehicleClass(vehicle)]
-        or skillCheckConfig.default
-    if not next(skillCheckConfig) then return end
+    -- skillCheckConfig = skillCheckConfig.model[GetEntityModel(vehicle)]
+    --     or skillCheckConfig.class[GetVehicleClass(vehicle)]
+    --     or skillCheckConfig.default
+    -- if not next(skillCheckConfig) then return end
+
+    local boostingInfo = Entity(vehicle).state.boostingData
+    if boostingInfo ~= nil and ((not boostingInfo.groupIdentifiers and boostingInfo.cid ~= QBX.PlayerData.citizenid) or (boostingInfo.groupIdentifiers and not boostingInfo.groupIdentifiers[QBX.PlayerData.citizenid])) then
+        exports.qbx_core:Notify('This vehicle is not meant for you!', 'error')
+        return
+    end
+
+    if boostingInfo ~= nil and boostingInfo.advancedSystem then
+        exports.qbx_core:Notify('This vehicle requires more advanced systems!', 'error')
+        return
+    end
 
     if islockpickingProcessLocked then return end -- start of the critical section
     islockpickingProcessLocked = true -- one call per player at a time
 
-    CreateThread(function()
-        local anim = config.anims.lockpick.model[GetEntityModel(vehicle)]
-            or config.anims.lockpick.class[GetVehicleClass(vehicle)]
-            or config.anims.lockpick.default
-        lib.playAnim(cache.ped, anim.dict, anim.clip, 3.0, 3.0, -1, 16, 0, false, false, false) -- lock opening animation
-        local isSuccess = customChallenge or lib.skillCheck(skillCheckConfig.difficulty, skillCheckConfig.inputs)
+    exports.ox_inventory:useItem(data, function(data)
+        if data then
+            CreateThread(function()
+                local anim = config.anims.lockpick.model[GetEntityModel(vehicle)]
+                    or config.anims.lockpick.class[GetVehicleClass(vehicle)]
+                    or config.anims.lockpick.default
+                lib.playAnim(cache.ped, anim.dict, anim.clip, 3.0, 3.0, -1, 16, 0, false, false, false)
+                local difficulty = 'easy'
+                if not isAdvancedLockedpick then
+                    difficulty = 'medium'
+                    if cache.vehicle == vehicle and cache.seat == -1 then
+                        difficulty = 'hard'
+                    end
+                end
 
-        if getIsVehicleInRange(vehicle, maxDistance) then -- the action will be aborted if the opened vehicle is too far.
-            lockpickCallback(vehicle, isAdvancedLockedpick, isSuccess)
+                local isSuccess
+
+                exports['ps-ui']:Circle(function(success)
+                    isSuccess = success
+                end, config.MinigameData[difficulty].count, config.MinigameData[difficulty].time)
+
+                if cache.vehicle == vehicle or getIsVehicleInRange(vehicle, maxDistance) then -- the action will be aborted if the opened vehicle is too far.
+                    if cache.vehicle == vehicle and cache.seat == -1 then
+                        lockpickCallback(vehicle, isAdvancedLockedpick, isSuccess, data.slot, true)
+                    else
+                        lockpickCallback(vehicle, isAdvancedLockedpick, isSuccess, data.slot)
+                    end
+                end
+
+                Wait(config.lockpickCooldown)
+                islockpickingProcessLocked = false -- end of the critical section
+            end)
         end
-
-        Wait(config.lockpickCooldown)
-        islockpickingProcessLocked = false -- end of the critical section
     end)
 end
 
@@ -213,7 +247,7 @@ local function hotwireCallback(vehicle, isAdvancedLockedpick, isSuccess)
         exports.qbx_core:Notify(locale('notify.failed_lockedpick'), 'error')
     end
 
-    breakLockpick(isAdvancedLockedpick, vehicle)
+    -- breakLockpick(isAdvancedLockedpick, vehicle)
 end
 
 local isHotwiringProcessLocked = false -- lock flag

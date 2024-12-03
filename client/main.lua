@@ -34,25 +34,6 @@ local function toggleLock(vehicle)
     end
 end
 
-exports('lockpick', function(data, slot)
-    local veh = cache.vehicle or lib.getClosestVehicle(GetEntityCoords(cache.ped), 4.0)
-    if not veh then return end
-    if HasKeys(veh) or (GetVehicleDoorLockStatus(veh) < 2 and not cache.vehicle) then return end
-   -- exports.ox_inventory:useItem(data, function(data)
-      --  if data then
-            LockpickDoor(false, data)
-     --   end
-    --end)
-end)
-exports('advancedlockpick', function(data, slot)
-    local veh = cache.vehicle or lib.getClosestVehicle(GetEntityCoords(cache.ped), 2.0)
-    if not veh then return end
-    if HasKeys(veh) or (GetVehicleDoorLockStatus(veh) < 2 and not cache.vehicle) then return end
-   -- exports.ox_inventory:useItem(data, function(data)
-      --  if data then
-            LockpickDoor(true, data)
-end)
-
 ---if the player does not have ignition access to the vehicle:
 ---check whether to give keys if engine is on
 ---disable the engine and listen for search keys if applicable to the vehicle
@@ -199,20 +180,20 @@ RegisterNetEvent('QBCore:Client:VehicleInfo', function(data)
     isTakingKeys = false
 end)
 
--- RegisterNetEvent('lockpicks:UseLockpick', function(isAdvanced)
---     local vehicle = cache.vehicle
---     if vehicle then
---         if GetKeySearchEnabled() then
---             DisableKeySearch()
---             Hotwire(vehicle, isAdvanced)
---             EnableKeySearch()
---         else
---             Hotwire(vehicle, isAdvanced)
---         end
---     else
---         LockpickDoor(isAdvanced)
---     end
--- end)
+RegisterNetEvent('lockpicks:UseLockpick', function(isAdvanced)
+    local vehicle = cache.vehicle
+    if vehicle then
+        if GetKeySearchEnabled() then
+            DisableKeySearch()
+            Hotwire(vehicle, isAdvanced)
+            EnableKeySearch()
+        else
+            Hotwire(vehicle, isAdvanced)
+        end
+    else
+        LockpickDoor(isAdvanced)
+    end
+end)
 
 RegisterNetEvent('qbx_vehiclekeys:client:OnLostKeys', function()
     if cache.seat == -1 then

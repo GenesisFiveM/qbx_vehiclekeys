@@ -113,19 +113,12 @@ end
 ---Chance to destroy lockpick
 ---@param isAdvancedLockedpick any
 ---@param vehicle number
-local function breakLockpick(isAdvancedLockedpick, vehicle)
-    local chance = math.random()
-    local vehicleConfig = GetVehicleConfig(vehicle)
-    if isAdvancedLockedpick then -- there is no benefit to using an advanced tool in the default configuration.
-        if chance <= vehicleConfig.removeAdvancedLockpickChance then
-            TriggerServerEvent("qb-vehiclekeys:server:breakLockpick", "advancedlockpick")
-        end
-    else
-        if chance <= vehicleConfig.removeNormalLockpickChance then
-            TriggerServerEvent("qb-vehiclekeys:server:breakLockpick", "lockpick")
-        end
-    end
+local function breakLockpick(isAdvancedLockedpick, slot)
+    TriggerServerEvent("qb-vehiclekeys:server:breakLockpick", isAdvancedLockedpick, slot,
+        isAdvancedLockedpick and shared.failedlockpickdurabilityadv or
+        shared.failedlockpickdurability)
 end
+
 
 ---Will be executed when the lock opening is successful.
 ---@param vehicle number The entity number of the vehicle.

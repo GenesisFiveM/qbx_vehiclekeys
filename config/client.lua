@@ -13,13 +13,13 @@ local easyLockpickSkillCheck = {
 
 ---@type SkillCheckConfig
 local normalLockpickSkillCheck = {
-    difficulty = { 'easy', 'easy', { areaSize = 60, speedMultiplier = 1 }, 'medium' },
+    difficulty = { 'easy', 'medium', { areaSize = 60, speedMultiplier = 1 }, 'hard' },
     inputs = { '1', '2', '3', '4' }
 }
 
 ---@type SkillCheckConfig
 local hardLockpickSkillCheck = {
-    difficulty = { 'easy', 'easy', { areaSize = 60, speedMultiplier = 2 }, 'medium' },
+    difficulty = { 'hard', 'hard', { areaSize = 60, speedMultiplier = 2 }, 'hard' },
     inputs = { '1', '2', '3', '4' }
 }
 
@@ -29,7 +29,7 @@ return {
     keepEngineOnWhenAbandoned = true, -- when enabled, keeps a vehicle's engine running after exiting
 
     -- Carjack Settings
-    carjackEnable = true,                -- Enables the ability to carjack pedestrian vehicles, stealing them by pointing a weapon at them
+    carjackEnable = false,                -- Enables the ability to carjack pedestrian vehicles, stealing them by pointing a weapon at them
     carjackingTimeInMs = 7500,           -- Time it takes to successfully carjack in miliseconds
     delayBetweenCarjackingsInMs = 10000, -- Time before you can attempt another carjack in miliseconds
 
@@ -49,7 +49,7 @@ return {
     ---@param crime string
     ---@param vehicle number entity
     alertPolice = function(crime, vehicle)
-        TriggerServerEvent('police:server:policeAlert', locale("info.vehicle_theft") .. crime)
+        --TriggerServerEvent('police:server:policeAlert', locale("info.vehicle_theft") .. crime)
     end,
 
     vehicleAlarmDuration = 10000,
@@ -111,8 +111,11 @@ return {
                 [VehicleClass.HELICOPTERS] = hardLockpickSkillCheck,
                 [VehicleClass.EMERGENCY] = hardLockpickSkillCheck,
                 [VehicleClass.MILITARY] = {}, -- cannot be lockpicked
-                [VehicleClass.TRAINS] = {}, -- cannot be lockpicked
+                [VehicleClass.TRAINS] = {},   -- cannot be lockpicked
                 [VehicleClass.OPEN_WHEEL] = easyLockpickSkillCheck,
+                [VehicleClass.SUPER] = hardLockpickSkillCheck,
+                [VehicleClass.SPORTS] = hardLockpickSkillCheck,
+
             },
             model = {}
         },
@@ -123,7 +126,9 @@ return {
                 [VehicleClass.HELICOPTERS] = hardLockpickSkillCheck,
                 [VehicleClass.EMERGENCY] = hardLockpickSkillCheck,
                 [VehicleClass.MILITARY] = {}, -- cannot be lockpicked
-                [VehicleClass.TRAINS] = {}, -- cannot be lockpicked
+                [VehicleClass.TRAINS] = {},   -- cannot be lockpicked
+                [VehicleClass.SUPER] = normalLockpickSkillCheck,
+                [VehicleClass.SPORTS] = normalLockpickSkillCheck
             },
             model = {}
         },
@@ -134,7 +139,7 @@ return {
                 [VehicleClass.HELICOPTERS] = hardLockpickSkillCheck,
                 [VehicleClass.EMERGENCY] = hardLockpickSkillCheck,
                 [VehicleClass.MILITARY] = {}, -- cannot be hotwired
-                [VehicleClass.TRAINS] = {}, -- cannot be hotwired
+                [VehicleClass.TRAINS] = {},   -- cannot be hotwired
                 [VehicleClass.OPEN_WHEEL] = easyLockpickSkillCheck,
             },
             model = {}
@@ -146,7 +151,7 @@ return {
                 [VehicleClass.HELICOPTERS] = hardLockpickSkillCheck,
                 [VehicleClass.EMERGENCY] = hardLockpickSkillCheck,
                 [VehicleClass.MILITARY] = {}, -- cannot be hotwired
-                [VehicleClass.TRAINS] = {}, -- cannot be hotwired
+                [VehicleClass.TRAINS] = {},   -- cannot be hotwired
             },
             model = {}
         }
